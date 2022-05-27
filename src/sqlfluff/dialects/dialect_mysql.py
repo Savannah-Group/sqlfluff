@@ -33,6 +33,8 @@ from sqlfluff.dialects.dialect_mysql_keywords import (
 )
 from sqlfluff.dialects import dialect_ansi as ansi
 
+from sqlfluff.core.parser.segments.raw import NewlineSegment, WhitespaceSegment
+
 ansi_dialect = load_raw_dialect("ansi")
 mysql_dialect = ansi_dialect.copy_as("mysql")
 
@@ -40,16 +42,42 @@ mysql_dialect.patch_lexer_matchers(
     [
         RegexLexer(
             "inline_comment",
-            r"(-- |#)[^\n]*",
+            r"(-- ?|#)[^\n]*",
             CommentSegment,
-            segment_kwargs={"trim_start": ("-- ", "#")},
+            segment_kwargs={"trim_start": ("--", "#")},
+        ),
+        RegexLexer(
+            "block_comment",
+            r"\/\*([^\*]|\*(?!\/))*\*\/;?",
+            CommentSegment,
+            subdivider=RegexLexer(
+                "newline",
+                r"\r\n|\n",
+                NewlineSegment,
+            ),
+            trim_post_subdivide=RegexLexer(
+                "whitespace",
+                r"[^\S\r\n]+",
+                WhitespaceSegment,
+            ),
         ),
         RegexLexer(
             "single_quote", r"(?s)('')+?(?!')|('.*?(?<!')(?:'')*'(?!'))", CodeSegment
         ),
     ]
 )
-
+mysql_dialect.add(
+    KeyGrammar=Sequence("KEY"),
+    FullTextKeyGrammar=Sequence("FULLTEXT", "KEY"),
+    IndexedKeyColumnStatement=Bracketed(
+        Delimited(
+            Ref("ColumnReferenceSegment"),
+            Bracketed(
+                Ref("NumericLiteralSegment")
+            )
+        )
+    ),
+)
 # Set Keywords
 # Do not clear inherited unreserved ansi keywords. Too many are needed to parse well.
 # Just add MySQL unreserved keywords.
@@ -256,9 +284,23 @@ class ColumnDefinitionSegment(BaseSegment):
             ),
         ),
         Bracketed(Anything(), optional=True),  # For types like VARCHAR(100)
+        Sequence(
+            "CHARACTER", "SET", Ref("DatatypeIdentifierSegment"), optional=True
+        ),
         AnyNumberOf(
             Ref("ColumnConstraintSegment", optional=True),
         ),
+    )
+
+
+class IndexDefinitionSegment(BaseSegment):
+    """An index definition, e.g. for CREATE TABLE or ALTER TABLE."""
+
+    type = "index_definition"
+    match_grammar = Sequence(
+        "INDEX",
+        Ref("IndexReferenceSegment"),
+        Ref("BracketedColumnReferenceListGrammar"),
     )
 
 
@@ -602,6 +644,7 @@ class TableConstraintSegment(BaseSegment):
                 # REFERENCES reftable [ ( refcolumn [, ... ] ) ]
                 Ref("ForeignKeyGrammar"),
                 # Local columns making up FOREIGN KEY constraint
+                Ref("ParameterNameSegment", optional=True),
                 Ref("BracketedColumnReferenceListGrammar"),
                 "REFERENCES",
                 Ref("ColumnReferenceSegment"),
@@ -623,6 +666,29 @@ class TableConstraintSegment(BaseSegment):
                         optional=True,
                     ),
                 ),
+            ),
+            Sequence(  # KEY key_name (column_name(integer)) index_parameters
+                OneOf(Ref("KeyGrammar"), "INDEX"),
+                Ref("IndexReferenceSegment"),
+                # Columns making up KEY constraint
+                Bracketed(
+                    AnyNumberOf(
+                        Delimited(
+                            Ref("ColumnReferenceSegment"),
+                            Bracketed(
+                                Ref("NumericLiteralSegment"),
+                                optional=True
+                            )
+                        ),
+                        min_times=1
+                    )
+                )
+            ),
+            Sequence(  # FULLTEXT KEY key_name (column_name, ...) index_parameters
+                Ref("FullTextKeyGrammar"),
+                Ref("IndexReferenceSegment"),
+                # Columns making up KEY constraint
+                Ref("BracketedColumnReferenceListGrammar"),
             ),
         ),
     )
@@ -960,7 +1026,7 @@ class AlterTableStatementSegment(BaseSegment):
                 ),
                 # Add column
                 Sequence(
-                    OneOf("ADD", "MODIFY"),
+                    OneOf("ADD", "MODIFY", "ALTER"),
                     Ref.keyword("COLUMN", optional=True),
                     Ref("ColumnDefinitionSegment"),
                     OneOf(
@@ -972,6 +1038,50 @@ class AlterTableStatementSegment(BaseSegment):
                         optional=True,
                     ),
                 ),
+                # Add CONSTRAINT
+                Sequence(
+                    "ADD",
+                    Sequence(
+                        "CONSTRAINT",
+                        Ref("ObjectReferenceSegment"),  # Constraint name
+                        optional=True
+                    ),
+                    OneOf(
+                        Sequence(
+                            Ref("ForeignKeyGrammar"),
+                            Ref("ParameterNameSegment", optional=True),
+                            Ref("BracketedColumnReferenceListGrammar"),
+                            "REFERENCES",
+                            Ref("ColumnReferenceSegment"),
+                            Ref("BracketedColumnReferenceListGrammar"),
+                            AnyNumberOf(
+                                Sequence(
+                                    "ON",
+                                    OneOf("DELETE", "UPDATE"),
+                                    OneOf(
+                                        "RESTRICT",
+                                        "CASCADE",
+                                        Sequence("SET", "NULL"),
+                                        Sequence("NO", "ACTION"),
+                                        Sequence("SET", "DEFAULT"),
+                                    ),
+                                    optional=True,
+                                ),
+                            )
+                        ),
+                        Sequence(
+                            Ref("UniqueKeyGrammar"),
+                            Ref("BracketedColumnReferenceListGrammar")
+                        )
+                    )
+                ),
+                # Add FULLTEXT
+                Sequence(
+                    OneOf("ADD"),
+                    "FULLTEXT",
+                    Ref("SingleIdentifierGrammar"),
+                    Ref("BracketedColumnReferenceListGrammar")
+                ),
                 # Add index
                 Sequence(
                     "ADD",
@@ -979,6 +1089,7 @@ class AlterTableStatementSegment(BaseSegment):
                     OneOf("INDEX", "KEY", optional=True),
                     Ref("IndexReferenceSegment"),
                     Sequence("USING", OneOf("BTREE", "HASH"), optional=True),
+                    Sequence(Ref("ForeignKeyGrammar"), OneOf("BTREE", "HASH"), optional=True),
                     Ref("BracketedColumnReferenceListGrammar"),
                     AnySetOf(
                         Sequence(
@@ -1017,7 +1128,11 @@ class AlterTableStatementSegment(BaseSegment):
                             Ref("ColumnReferenceSegment"),
                         ),
                         Sequence(
-                            OneOf("INDEX", "KEY", optional=True),
+                            OneOf("INDEX",
+                                  Ref("ForeignKeyGrammar"),
+                                  "KEY",
+                                  "CONSTRAINT",
+                                  optional=True),
                             Ref("IndexReferenceSegment"),
                         ),
                     ),

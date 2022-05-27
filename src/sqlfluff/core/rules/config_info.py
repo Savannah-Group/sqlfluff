@@ -171,6 +171,13 @@ STANDARD_CONFIG_INFO_DICT = {
             "Defaults to ``False``."
         ),
     },
+    "allow_unreserved_keywords": {
+        "validation": [True, False],
+        "definition": (
+            "If ``True``, does not require every unreserved keyword to be quoted. "
+            "Defaults to ``False``."
+        ),
+    },
     "blocked_words": {
         "definition": (
             "Optional, comma-separated list of blocked words which should not be used "
