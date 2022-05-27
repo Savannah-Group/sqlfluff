@@ -1041,8 +1041,11 @@ class AlterTableStatementSegment(BaseSegment):
                 # Add CONSTRAINT
                 Sequence(
                     "ADD",
-                    "CONSTRAINT",
-                    Ref("ObjectReferenceSegment"),  # Constraint name
+                    Sequence(
+                        "CONSTRAINT",
+                        Ref("ObjectReferenceSegment"),  # Constraint name
+                        optional=True
+                    ),
                     OneOf(
                         Sequence(
                             Ref("ForeignKeyGrammar"),
