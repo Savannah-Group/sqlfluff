@@ -1074,6 +1074,7 @@ class AlterTableStatementSegment(BaseSegment):
                             OneOf("INDEX",
                                   Ref("ForeignKeyGrammar"),
                                   "KEY",
+                                  "CONSTRAINT",
                                   optional=True),
                             Ref("IndexReferenceSegment"),
                         ),
