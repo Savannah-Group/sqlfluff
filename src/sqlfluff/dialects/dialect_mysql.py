@@ -1038,6 +1038,32 @@ class AlterTableStatementSegment(BaseSegment):
                         optional=True,
                     ),
                 ),
+                # Add CONSTRAINT
+                Sequence(
+                    "ADD",
+                    "CONSTRAINT",
+                    Ref("ObjectReferenceSegment"),  # Constraint name
+                    Ref("ForeignKeyGrammar"),
+                    Ref("ParameterNameSegment", optional=True),
+                    Ref("BracketedColumnReferenceListGrammar"),
+                    "REFERENCES",
+                    Ref("ColumnReferenceSegment"),
+                    Ref("BracketedColumnReferenceListGrammar"),
+                    AnyNumberOf(
+                        Sequence(
+                            "ON",
+                            OneOf("DELETE", "UPDATE"),
+                            OneOf(
+                                "RESTRICT",
+                                "CASCADE",
+                                Sequence("SET", "NULL"),
+                                Sequence("NO", "ACTION"),
+                                Sequence("SET", "DEFAULT"),
+                            ),
+                            optional=True,
+                        ),
+                    ),
+                ),
                 # Add FULLTEXT
                 Sequence(
                     OneOf("ADD"),
@@ -1064,31 +1090,6 @@ class AlterTableStatementSegment(BaseSegment):
                         Sequence("WITH", "PARSER", Ref("ObjectReferenceSegment")),
                         Ref("CommentClauseSegment"),
                         OneOf("VISIBLE", "INVISIBLE"),
-                    ),
-                ),
-                # Add CONSTRAINT
-                Sequence(
-                    "ADD",
-                    "CONSTRAINT",
-                    Ref("ObjectReferenceSegment"),  # Constraint name
-                    Ref("ForeignKeyGrammar"),
-                    Ref("BracketedColumnReferenceListGrammar"),
-                    "REFERENCES",
-                    Ref("TableReferenceSegment"),
-                    Ref("BracketedColumnReferenceListGrammar"),
-                    AnyNumberOf(
-                        Sequence(
-                            "ON",
-                            OneOf("DELETE", "UPDATE"),
-                            OneOf(
-                                "RESTRICT",
-                                "CASCADE",
-                                Sequence("SET", "NULL"),
-                                Sequence("NO", "ACTION"),
-                                Sequence("SET", "DEFAULT"),
-                            ),
-                            optional=True,
-                        ),
                     ),
                 ),
                 # Change column
