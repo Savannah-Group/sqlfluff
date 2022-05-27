@@ -1067,7 +1067,21 @@ class AlterTableStatementSegment(BaseSegment):
                     Ref("BracketedColumnReferenceListGrammar"),
                     "REFERENCES",
                     Ref("TableReferenceSegment"),
-                    Ref("BracketedColumnReferenceListGrammar")
+                    Ref("BracketedColumnReferenceListGrammar"),
+                    AnyNumberOf(
+                        Sequence(
+                            "ON",
+                            OneOf("DELETE", "UPDATE"),
+                            OneOf(
+                                "RESTRICT",
+                                "CASCADE",
+                                Sequence("SET", "NULL"),
+                                Sequence("NO", "ACTION"),
+                                Sequence("SET", "DEFAULT"),
+                            ),
+                            optional=True,
+                        ),
+                    ),
                 ),
                 # Change column
                 Sequence(
