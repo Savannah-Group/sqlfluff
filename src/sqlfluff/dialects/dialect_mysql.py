@@ -1033,6 +1033,7 @@ class AlterTableStatementSegment(BaseSegment):
                     OneOf("INDEX", "KEY", optional=True),
                     Ref("IndexReferenceSegment"),
                     Sequence("USING", OneOf("BTREE", "HASH"), optional=True),
+                    Sequence(Ref("ForeignKeyGrammar"), OneOf("BTREE", "HASH"), optional=True),
                     Ref("BracketedColumnReferenceListGrammar"),
                     AnySetOf(
                         Sequence(
@@ -1045,6 +1046,17 @@ class AlterTableStatementSegment(BaseSegment):
                         Ref("CommentClauseSegment"),
                         OneOf("VISIBLE", "INVISIBLE"),
                     ),
+                ),
+                # Add CONSTRAINT
+                Sequence(
+                    "ADD",
+                    "CONSTRAINT",
+                    Ref("ObjectReferenceSegment"),  # Constraint name
+                    Ref("ForeignKeyGrammar"),
+                    Ref("BracketedColumnReferenceListGrammar"),
+                    "REFERENCES",
+                    Ref("TableReferenceSegment"),
+                    Ref("BracketedColumnReferenceListGrammar")
                 ),
                 # Change column
                 Sequence(
