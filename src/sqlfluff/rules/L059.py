@@ -163,7 +163,9 @@ class Rule_L059(BaseRule):
 
         # Extract contents of outer quotes.
         quoted_identifier_contents = context.segment.raw[1:-1]
-
+        if quoted_identifier_contents.upper() in context.dialect.sets("reserved_keywords"):
+            # Reserved words are always quoted.
+            return None
         # Retrieve NakedIdentifierSegment RegexParser for the dialect.
         naked_identifier_parser = context.dialect._library["NakedIdentifierSegment"]
 
