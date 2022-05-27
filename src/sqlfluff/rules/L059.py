@@ -85,6 +85,7 @@ class Rule_L059(BaseRule):
         "ignore_words",
         "ignore_words_regex",
         "force_enable",
+        "allow_unreserved_keywords"
     ]
     _dialects_allowing_quotes_in_column_names = ["snowflake"]
 
@@ -99,6 +100,7 @@ class Rule_L059(BaseRule):
         self.ignore_words: str
         self.ignore_words_regex: str
         self.force_enable: bool
+        self.allow_unreserved_keywords: bool
         # Some dialects allow quotes as PART OF the column name. In other words,
         # these are two different columns:
         # - date
@@ -165,6 +167,9 @@ class Rule_L059(BaseRule):
         quoted_identifier_contents = context.segment.raw[1:-1]
         if quoted_identifier_contents.upper() in context.dialect.sets("reserved_keywords"):
             # Reserved words are always quoted.
+            return None
+        if not self.allow_unreserved_keywords and quoted_identifier_contents.upper() \
+                in context.dialect.sets("unreserved_keywords"):
             return None
         # Retrieve NakedIdentifierSegment RegexParser for the dialect.
         naked_identifier_parser = context.dialect._library["NakedIdentifierSegment"]
