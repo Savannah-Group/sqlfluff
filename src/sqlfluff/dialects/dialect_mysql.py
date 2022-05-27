@@ -33,6 +33,8 @@ from sqlfluff.dialects.dialect_mysql_keywords import (
 )
 from sqlfluff.dialects import dialect_ansi as ansi
 
+from sqlfluff.core.parser.segments.raw import NewlineSegment, WhitespaceSegment
+
 ansi_dialect = load_raw_dialect("ansi")
 mysql_dialect = ansi_dialect.copy_as("mysql")
 
@@ -43,6 +45,21 @@ mysql_dialect.patch_lexer_matchers(
             r"(-- |#)[^\n]*",
             CommentSegment,
             segment_kwargs={"trim_start": ("-- ", "#")},
+        ),
+        RegexLexer(
+            "block_comment",
+            r"\/\*([^\*]|\*(?!\/))*\*\/;?",
+            CommentSegment,
+            subdivider=RegexLexer(
+                "newline",
+                r"\r\n|\n",
+                NewlineSegment,
+            ),
+            trim_post_subdivide=RegexLexer(
+                "whitespace",
+                r"[^\S\r\n]+",
+                WhitespaceSegment,
+            ),
         ),
         RegexLexer(
             "single_quote", r"(?s)('')+?(?!')|('.*?(?<!')(?:'')*'(?!'))", CodeSegment
