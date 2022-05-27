@@ -1014,7 +1014,7 @@ class AlterTableStatementSegment(BaseSegment):
                 ),
                 # Add column
                 Sequence(
-                    OneOf("ADD", "MODIFY"),
+                    OneOf("ADD", "MODIFY", "ALTER"),
                     Ref.keyword("COLUMN", optional=True),
                     Ref("ColumnDefinitionSegment"),
                     OneOf(
