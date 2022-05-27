@@ -1071,7 +1071,10 @@ class AlterTableStatementSegment(BaseSegment):
                             Ref("ColumnReferenceSegment"),
                         ),
                         Sequence(
-                            OneOf("INDEX", "KEY", optional=True),
+                            OneOf("INDEX",
+                                  Ref("ForeignKeyGrammar"),
+                                  "KEY",
+                                  optional=True),
                             Ref("IndexReferenceSegment"),
                         ),
                     ),
