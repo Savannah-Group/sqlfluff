@@ -276,6 +276,9 @@ class ColumnDefinitionSegment(BaseSegment):
             ),
         ),
         Bracketed(Anything(), optional=True),  # For types like VARCHAR(100)
+        Sequence(
+            "CHARACTER", "SET", Ref("DatatypeIdentifierSegment"), optional=True
+        ),
         AnyNumberOf(
             Ref("ColumnConstraintSegment", optional=True),
         ),
