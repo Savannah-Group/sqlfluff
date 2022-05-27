@@ -293,6 +293,17 @@ class ColumnDefinitionSegment(BaseSegment):
     )
 
 
+class IndexDefinitionSegment(BaseSegment):
+    """An index definition, e.g. for CREATE TABLE or ALTER TABLE."""
+
+    type = "index_definition"
+    match_grammar = Sequence(
+        "INDEX",
+        Ref("IndexReferenceSegment"),
+        Ref("BracketedColumnReferenceListGrammar"),
+    )
+
+
 class CreateTableStatementSegment(ansi.CreateTableStatementSegment):
     """Create table segment.
 
