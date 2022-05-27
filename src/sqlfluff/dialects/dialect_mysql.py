@@ -1038,6 +1038,13 @@ class AlterTableStatementSegment(BaseSegment):
                         optional=True,
                     ),
                 ),
+                # Add FULLTEXT
+                Sequence(
+                    OneOf("ADD"),
+                    "FULLTEXT",
+                    Ref("SingleIdentifierGrammar"),
+                    Ref("BracketedColumnReferenceListGrammar")
+                ),
                 # Add index
                 Sequence(
                     "ADD",
