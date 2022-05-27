@@ -667,7 +667,7 @@ class TableConstraintSegment(BaseSegment):
                 ),
             ),
             Sequence(  # KEY key_name (column_name(integer)) index_parameters
-                Ref("KeyGrammar"),
+                OneOf(Ref("KeyGrammar"), "INDEX"),
                 Ref("IndexReferenceSegment"),
                 # Columns making up KEY constraint
                 Bracketed(
