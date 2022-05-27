@@ -67,7 +67,8 @@ mysql_dialect.patch_lexer_matchers(
     ]
 )
 mysql_dialect.add(
-    KeyGrammar=Sequence("KEY")
+    KeyGrammar=Sequence("KEY"),
+    FullTextKeyGrammar=Sequence("FULLTEXT", "KEY"),
 )
 # Set Keywords
 # Do not clear inherited unreserved ansi keywords. Too many are needed to parse well.
@@ -645,6 +646,12 @@ class TableConstraintSegment(BaseSegment):
             ),
             Sequence(  # KEY key_name (column_name) index_parameters
                 Ref("KeyGrammar"),
+                Ref("IndexReferenceSegment"),
+                # Columns making up KEY constraint
+                Ref("BracketedColumnReferenceListGrammar"),
+            ),
+            Sequence(  # FULLTEXT KEY key_name (column_name, ...) index_parameters
+                Ref("FullTextKeyGrammar"),
                 Ref("IndexReferenceSegment"),
                 # Columns making up KEY constraint
                 Ref("BracketedColumnReferenceListGrammar"),
