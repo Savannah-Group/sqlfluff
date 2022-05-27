@@ -1043,26 +1043,34 @@ class AlterTableStatementSegment(BaseSegment):
                     "ADD",
                     "CONSTRAINT",
                     Ref("ObjectReferenceSegment"),  # Constraint name
-                    Ref("ForeignKeyGrammar"),
-                    Ref("ParameterNameSegment", optional=True),
-                    Ref("BracketedColumnReferenceListGrammar"),
-                    "REFERENCES",
-                    Ref("ColumnReferenceSegment"),
-                    Ref("BracketedColumnReferenceListGrammar"),
-                    AnyNumberOf(
+                    OneOf(
                         Sequence(
-                            "ON",
-                            OneOf("DELETE", "UPDATE"),
-                            OneOf(
-                                "RESTRICT",
-                                "CASCADE",
-                                Sequence("SET", "NULL"),
-                                Sequence("NO", "ACTION"),
-                                Sequence("SET", "DEFAULT"),
-                            ),
-                            optional=True,
+                            Ref("ForeignKeyGrammar"),
+                            Ref("ParameterNameSegment", optional=True),
+                            Ref("BracketedColumnReferenceListGrammar"),
+                            "REFERENCES",
+                            Ref("ColumnReferenceSegment"),
+                            Ref("BracketedColumnReferenceListGrammar"),
+                            AnyNumberOf(
+                                Sequence(
+                                    "ON",
+                                    OneOf("DELETE", "UPDATE"),
+                                    OneOf(
+                                        "RESTRICT",
+                                        "CASCADE",
+                                        Sequence("SET", "NULL"),
+                                        Sequence("NO", "ACTION"),
+                                        Sequence("SET", "DEFAULT"),
+                                    ),
+                                    optional=True,
+                                ),
+                            )
                         ),
-                    ),
+                        Sequence(
+                            Ref("UniqueKeyGrammar"),
+                            Ref("BracketedColumnReferenceListGrammar")
+                        )
+                    )
                 ),
                 # Add FULLTEXT
                 Sequence(
