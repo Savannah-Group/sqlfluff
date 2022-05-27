@@ -644,6 +644,7 @@ class TableConstraintSegment(BaseSegment):
                 # REFERENCES reftable [ ( refcolumn [, ... ] ) ]
                 Ref("ForeignKeyGrammar"),
                 # Local columns making up FOREIGN KEY constraint
+                Ref("ParameterNameSegment", optional=True),
                 Ref("BracketedColumnReferenceListGrammar"),
                 "REFERENCES",
                 Ref("ColumnReferenceSegment"),
