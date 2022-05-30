@@ -294,13 +294,28 @@ class ColumnDefinitionSegment(BaseSegment):
 
 
 class IndexDefinitionSegment(BaseSegment):
-    """An index definition, e.g. for CREATE TABLE or ALTER TABLE."""
-
     type = "index_definition"
     match_grammar = Sequence(
-        "INDEX",
+        Sequence(
+            "CONSTRAINT",
+            Ref("ObjectReferenceSegment"),  # Constraint name
+            optional=True
+        ),
+        OneOf(
+            "UNIQUE",
+            "PRIMARY",
+            "FOREIGN",
+            optional=True
+        ),
+        Ref.keyword("UNIQUE", optional=True),
+        OneOf(
+            Ref.keyword("INDEX"),
+            Ref.keyword("KEY"),
+        ),
         Ref("IndexReferenceSegment"),
-        Ref("BracketedColumnReferenceListGrammar"),
+        Sequence("USING", OneOf("BTREE", "HASH"), optional=True),
+        Sequence(Ref("ForeignKeyGrammar"), OneOf("BTREE", "HASH"), optional=True),
+        Ref("BracketedColumnReferenceListGrammar")
     )
 
 
@@ -1037,6 +1052,7 @@ class AlterTableStatementSegment(BaseSegment):
                         Ref("BracketedColumnReferenceListGrammar"),
                         optional=True,
                     ),
+                    Ref("")
                 ),
                 # Add CONSTRAINT
                 Sequence(
@@ -1077,7 +1093,7 @@ class AlterTableStatementSegment(BaseSegment):
                 ),
                 # Add FULLTEXT
                 Sequence(
-                    OneOf("ADD"),
+                    "ADD",
                     "FULLTEXT",
                     Ref("SingleIdentifierGrammar"),
                     Ref("BracketedColumnReferenceListGrammar")
@@ -1085,12 +1101,7 @@ class AlterTableStatementSegment(BaseSegment):
                 # Add index
                 Sequence(
                     "ADD",
-                    Ref.keyword("UNIQUE", optional=True),
-                    OneOf("INDEX", "KEY", optional=True),
-                    Ref("IndexReferenceSegment"),
-                    Sequence("USING", OneOf("BTREE", "HASH"), optional=True),
-                    Sequence(Ref("ForeignKeyGrammar"), OneOf("BTREE", "HASH"), optional=True),
-                    Ref("BracketedColumnReferenceListGrammar"),
+                    Ref("IndexDefinitionSegment"),
                     AnySetOf(
                         Sequence(
                             "KEY_BLOCK_SIZE",
