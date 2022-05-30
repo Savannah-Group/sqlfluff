@@ -1052,7 +1052,7 @@ class AlterTableStatementSegment(BaseSegment):
                         Ref("BracketedColumnReferenceListGrammar"),
                         optional=True,
                     ),
-                    Ref("")
+                    Ref("IndexDefinitionSegment", optional=True),
                 ),
                 # Add CONSTRAINT
                 Sequence(
