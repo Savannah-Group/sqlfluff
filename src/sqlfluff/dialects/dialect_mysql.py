@@ -307,12 +307,34 @@ class IndexDefinitionSegment(BaseSegment):
             "FOREIGN",
             optional=True
         ),
-        Ref.keyword("UNIQUE", optional=True),
         OneOf(
             Ref.keyword("INDEX"),
             Ref.keyword("KEY"),
         ),
+        Sequence(
+            Ref("ParameterNameSegment", optional=True),
+            Ref("BracketedColumnReferenceListGrammar"),
+            "REFERENCES",
+            Ref("ColumnReferenceSegment"),
+            Ref("BracketedColumnReferenceListGrammar"),
+            AnyNumberOf(
+                Sequence(
+                    "ON",
+                    OneOf("DELETE", "UPDATE"),
+                    OneOf(
+                        "RESTRICT",
+                        "CASCADE",
+                        Sequence("SET", "NULL"),
+                        Sequence("NO", "ACTION"),
+                        Sequence("SET", "DEFAULT"),
+                    ),
+                    optional=True,
+                ),
+            ),
+            optional=True
+        ),
         Ref("IndexReferenceSegment"),
+        Ref("BracketedColumnReferenceListGrammar", optional=True),
         Sequence("USING", OneOf("BTREE", "HASH"), optional=True),
         Sequence(Ref("ForeignKeyGrammar"), OneOf("BTREE", "HASH"), optional=True),
         Ref("BracketedColumnReferenceListGrammar")
